@@ -3,7 +3,7 @@ FROM alpine:edge
 MAINTAINER habibiefaried@gmail.com
 #Default Config, just change this
 ENV MYSQL_ROOT_PASSWORD=thebuggenie
-ENV THEBUGGENIE_VERSION=v4.1.10
+ENV GENIE_DB=thebuggenie
 
 RUN apk upgrade --no-cache --update && apk add --no-cache --update \
         bash \
@@ -95,6 +95,11 @@ RUN printf "\n<Directory \"/var/www/localhost/htdocs/public\">\n\tDirectoryIndex
 WORKDIR /var/www/localhost
 RUN rm -rf htdocs && git clone https://github.com/thebuggenie/thebuggenie.git htdocs 
 WORKDIR /var/www/localhost/htdocs
-RUN git checkout tags/$THEBUGGENIE_VERSION && composer install
+
+##I'm using master version of buggenie
+RUN composer install && mkdir cache && chmod -R 777 cache
+RUN chown -R apache:apache /var/www/localhost/htdocs/
+RUN chmod a+w /var/www/localhost/htdocs/ && chmod a+w /var/www/localhost/htdocs/public/  && touch /var/www/localhost/htdocs/core/config/b2db.yml && chmod a+w /var/www/localhost/htdocs/core/config/b2db.yml
+RUN sed -i 's~UTF-8//IGNORE~UTF-8~' /var/www/localhost/htdocs/core/framework/Action.php
 
 CMD ["/init.sh"]

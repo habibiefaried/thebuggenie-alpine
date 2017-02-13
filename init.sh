@@ -1,4 +1,6 @@
 #!/bin/sh
+apachectl -k start
+
 if [ -d /app/mysql ]; then
   echo "[i] MySQL directory already present, skipping creation"
 else

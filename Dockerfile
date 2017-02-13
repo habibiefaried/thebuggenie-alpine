@@ -3,6 +3,7 @@ FROM alpine:edge
 MAINTAINER habibiefaried@gmail.com
 #Default Config, just change this
 ENV MYSQL_ROOT_PASSWORD=thebuggenie
+ENV THEBUGGENIE_VERSION=v4.1.10
 
 RUN apk upgrade --no-cache --update && apk add --no-cache --update \
         bash \
@@ -74,7 +75,8 @@ RUN apk upgrade --no-cache --update && apk add --no-cache --update \
 		php5-opcache \
 	&& mkdir /run/apache2 \
     && sed -i 's/#LoadModule\ rewrite_module/LoadModule\ rewrite_module/' /etc/apache2/httpd.conf \
-    && sed -i 's/#LoadModule\ slotmem_shm_module modules/LoadModule\ slotmem_shm_module modules/' /etc/apache2/httpd.conf \
+    && sed -i 's/#LoadModule\ slotmem_shm_module/LoadModule\ slotmem_shm_module/' /etc/apache2/httpd.conf \
+    && sed -i 's/DirectoryIndex\ index.html/DirectoryIndex\ index.php\ index.html/' /etc/apache2/httpd.conf \
     && mkdir -p /opt/utils
 
 RUN apk add --no-cache bash build-base wget curl m4 autoconf libtool imagemagick imagemagick-dev zlib zlib-dev libcurl curl-dev libevent libevent-dev libidn libmemcached libmemcached-dev libidn-dev && curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
@@ -87,6 +89,12 @@ WORKDIR /root
 
 COPY init.sh /init.sh
 RUN chmod +x /init.sh
-RUN printf "\n<Directory \"/var/www/localhost/htdocs/\">\n\tAllowOverride All\n</Directory>\n" >> /etc/apache2/httpd.conf
+RUN echo 'DocumentRoot "/var/www/localhost/htdocs/public"' >> /etc/apache2/httpd.conf
+RUN printf "\n<Directory \"/var/www/localhost/htdocs/public\">\n\tDirectoryIndex index.php index.html\n\tAllowOverride All\n</Directory>\n" >> /etc/apache2/httpd.conf
+
+WORKDIR /var/www/localhost
+RUN rm -rf htdocs && git clone https://github.com/thebuggenie/thebuggenie.git htdocs 
+WORKDIR /var/www/localhost/htdocs
+RUN git checkout tags/$THEBUGGENIE_VERSION && composer install
 
 CMD ["/init.sh"]
